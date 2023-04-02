@@ -12,13 +12,14 @@ app.use(function(req, res, next) {
   });
 
 // For parsing application/json
-app.use(express.json());
+app.use(express.json({extended: true}))
 
 const data = {};
 
 app.post("/create", async (req, res) => {
   var response = 0;
-  const data = req.query;
+  const data = req.body;
+    // var data = {"name":"Shrish Shrivastava","scholar":"211119072","email":"shrish108@gmail.com","whatsapp":"9340399137","year":"Second","course":"Materials and Metallurgical Engineering","section":"","primary":"Web Developer","secondary":"Sponsorship Executive"};
   console.log(data);
   //data validation
 
@@ -144,6 +145,6 @@ app.post("/create", async (req, res) => {
   res.send(response.toString());
 });
 
-app.listen(3000, () => {
-  console.log("Our express server is up on port 3000");
+app.listen(3001, () => {
+  console.log("Our express server is up on port 3001");
 });
