@@ -2,24 +2,84 @@
 const { db } = require("./initFirestore.cjs");
 const express = require("express");
 var validator = require("email-validator");
-
+var fs = require('fs');
+const { clearScreenDown } = require("readline");
 const app = express();
 
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "https://recruitment-2023.vercel.app"); 
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-  });
+app.use(function (req, res, next) {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://recruitment-2023.vercel.app"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
 
 // For parsing application/json
-app.use(express.json({extended: true}))
+app.use(express.json({ extended: true }));
 
 const data = {};
+app.get("/read", async (req, res) => {
+  fs.readFile('readFrom.txt','utf8', function(err, data) {
+    // console.log(data)
+    var arrDat = data.split("~");
+    arrDat.pop();
+    arrDat.forEach((e,i)=>{
+      arrDat[i] = JSON.parse(e);
+    })
+ var headers = {
+      'whatsapp': 'Whatsapp',
+      'secondary': 'Secondary',
+      'year': 'Year',
+      'name': 'Name',
+      'course': 'Course',
+      'section': 'Section',
+      'scholar': 'Scholar',
+      'email': 'Email',
+      'primary': 'Primary'
+    };
+
+    var Table = require("table-builder");
+    var bootstrap = `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>`
+    res.send(bootstrap + 
+      new Table({ class: "table" })
+        .setHeaders(headers) // see above json headers section
+        .setData(arrDat) // see above json data section
+        .render()
+    );
+  });
+})
+
+app.get("/fetch", async (req, res) => {
+  var query = db.collection("users");
+  var result = await query.get();
+  var dom = "";
+  var tableStr = "";
+  var i = 0;
+  result.forEach((doc) => {
+    var id = doc.id;
+    var dat = doc.data();
+    tableStr += JSON.stringify(dat) + "~";
+    i++
+    
+  });
+  fs.writeFile('readFrom.txt', tableStr, function (err) {
+    if (err) throw err;
+    console.log('Saved!');
+  });
+   
+});
 
 app.post("/create", async (req, res) => {
   var response = 0;
   const data = req.body;
-    // var data = {"name":"Shrish Shrivastava","scholar":"211119072","email":"shrish108@gmail.com","whatsapp":"9340399137","year":"Second","course":"Materials and Metallurgical Engineering","section":"","primary":"Web Developer","secondary":"Sponsorship Executive"};
+  // var data = {"name":"Shrish Shrivastava","scholar":"211119072","email":"shrish108@gmail.com","whatsapp":"9340399137","year":"Second","course":"Materials and Metallurgical Engineering","section":"","primary":"Web Developer","secondary":"Sponsorship Executive"};
   console.log(data);
   //data validation
 
@@ -113,6 +173,11 @@ app.post("/create", async (req, res) => {
                 //fresh entry create_user
                 await db.collection("users").doc().set(data);
                 response = 2;
+                fs.appendFile('readFrom.txt', JSON.stringify(data) + "~", function (err) {
+                  if (err) throw err;
+                });
+
+                
               } else {
                 //Whatsapp number already used
                 response = 3;
